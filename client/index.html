@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Costco Item Finder</title>
+    <link rel="icon" type="image/x-icon" href="./costcoitemfinder.png">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 2rem;
+            background-color: #f2f2f2;
+        }
+        input, button {
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            width: 100%;
+            max-width: 500px;
+        }
+        pre {
+            background-color: #fff;
+            padding: 1rem;
+            border: 1px solid #ccc;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+<img src="./costcoitemfinder.png" style="width: 300px; margin-bottom: 20px;" />
+<div>1. Navigate to <a href="https://costco.com" target="_blank">https://costco.com</a></div>
+<div>2. Click on Account, then log in</div>
+<div>3. Open Network Tab</div>
+<div>4. Click on Orders & Purchases</div>
+<div>5. Paste the header values below which can be found under the /graphql endpoint</div>
+<br><br/>
+<form id="apiForm">
+    <input type="text" id="clientIdentifier" placeholder="client-identifier" required /><br />
+    <input type="text" id="authorization" placeholder="costco-x-authorization (Bearer ...)" required /><br />
+    <input type="text" id="wcsClientId" placeholder="costco-x-wcs-clientId" required /><br />
+    <button type="submit" style="cursor: pointer;">Submit</button>
+</form>
+
+<h2>Response:</h2>
+<pre id="responseOutput" style="max-height: 40vh;overflow-y: scroll">Awaiting submission...</pre>
+
+<script>
+    window.addEventListener('DOMContentLoaded', () => {
+        const savedClientIdentifier = localStorage.getItem('clientIdentifier');
+        const savedAuthorization = localStorage.getItem('authorization');
+        const savedWcsClientId = localStorage.getItem('wcsClientId');
+
+        if (savedClientIdentifier) document.getElementById('clientIdentifier').value = savedClientIdentifier;
+        if (savedAuthorization) document.getElementById('authorization').value = savedAuthorization;
+        if (savedWcsClientId) document.getElementById('wcsClientId').value = savedWcsClientId;
+    });
+
+    document.getElementById('apiForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const clientIdentifier = document.getElementById('clientIdentifier').value;
+        const authorization = document.getElementById('authorization').value;
+        const wcsClientId = document.getElementById('wcsClientId').value;
+        const output = document.getElementById('responseOutput');
+
+        localStorage.setItem('clientIdentifier', clientIdentifier);
+        localStorage.setItem('authorization', authorization);
+        localStorage.setItem('wcsClientId', wcsClientId);
+
+        const headers = {
+            'Accept': '*/*',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Connection': 'keep-alive',
+            'Content-Type': 'application/json-patch+json',
+            'Origin': 'https://www.costco.com',
+            'Referer': 'https://www.costco.com/',
+            'client-identifier': clientIdentifier,
+            'costco-x-authorization': authorization,
+            'costco-x-wcs-clientId': wcsClientId,
+            'costco.env': 'ecom',
+            'costco.service': 'restOrders'
+        };
+
+        const body = JSON.stringify({
+            "query": "query getOnlineOrders($startDate:String!, $endDate:String!, $pageNumber:Int , $pageSize:Int, $warehouseNumber:String! ){\n    getOnlineOrders(startDate:$startDate, endDate:$endDate, pageNumber : $pageNumber, pageSize :  $pageSize, warehouseNumber :  $warehouseNumber) {\n      pageNumber\n      pageSize\n      totalNumberOfRecords\n      bcOrders {\n        orderHeaderId\n        orderPlacedDate : orderedDate\n        orderNumber : sourceOrderNumber \n        orderTotal\n        warehouseNumber\n        status\n        emailAddress\n        orderCancelAllowed\n        orderPaymentFailed : orderPaymentEditAllowed\n        orderReturnAllowed\n        orderLineItems {\n          orderLineItemCancelAllowed\n        \torderLineItemId\n          orderReturnAllowed\n          itemId\n          itemNumber\n          itemTypeId\n          lineNumber\n          itemDescription\n          deliveryDate\n          warehouseNumber\n          status\n          orderStatus\n          parentOrderLineItemId\n          isFSAEligible\n          shippingType\n          shippingTimeFrame\n          isShipToWarehouse\n          carrierItemCategory\n          carrierContactPhone\n          programTypeId\n          isBuyAgainEligible\n          scheduledDeliveryDate\n          scheduledDeliveryDateEnd\n          configuredItemData\n          shipment {\n            shipmentId             \n            orderHeaderId\n            orderShipToId \n            lineNumber \n            orderNumber\n            shippingType \n            shippingTimeFrame \n            shippedDate \n            packageNumber \n            trackingNumber \n            trackingSiteUrl \n            carrierName         \n            estimatedArrivalDate \n            deliveredDate \n            isDeliveryDelayed \n            isEstimatedArrivalDateEligible \n            statusTypeId \n            status \n            pickUpReadyDate\n            pickUpCompletedDate\n            reasonCode\n            trackingEvent {\n              event\n              carrierName\n              eventDate\n              estimatedDeliveryDate\n              scheduledDeliveryDate\n              trackingNumber\n            }\n          }\n        }\n      }\n    }\n  }",
+            "variables": {
+                "pageNumber": 1,
+                "pageSize": 100000,
+                "startDate": "2020-01-01",
+                "endDate": "2025-12-31",
+                "warehouseNumber": "847"
+            }
+        });
+
+        try {
+            output.textContent = "Loading...";
+            const res = await fetch('https://ecom-api.costco.com/ebusiness/order/v1/orders/graphql', {
+                method: 'POST',
+                headers,
+                body: body,
+            });
+
+            const data = await res.json();
+            output.textContent = JSON.stringify(data, null, 2);
+        } catch (err) {
+            output.textContent = `Error: ${err.message}`;
+        }
+    });
+</script>
+</body>
+</html>
