@@ -32,8 +32,7 @@
 <div>2. Click on Account, then log in</div>
 <div>3. Open Network Tab</div>
 <div>4. Click on Orders & Purchases</div>
-<div>5. Paste the header values below which can be found under the /graphql endpoint</div>
-<br><br/>
+<div style="margin-bottom: 20px;">5. Paste the header values below which can be found under the /graphql endpoint</div>
 <form id="apiForm">
     <input type="text" id="clientIdentifier" placeholder="client-identifier" required /><br />
     <input type="text" id="authorization" placeholder="costco-x-authorization (Bearer ...)" required /><br />
@@ -41,8 +40,7 @@
     <button type="submit" style="cursor: pointer;">Submit</button>
 </form>
 
-<h2>Response:</h2>
-<pre id="responseOutput" style="max-height: 40vh;overflow-y: scroll">Awaiting submission...</pre>
+<pre id="responseOutput" style="max-height: 45vh;overflow-y: scroll">Awaiting submission...</pre>
 
 <script>
     window.addEventListener('DOMContentLoaded', () => {
